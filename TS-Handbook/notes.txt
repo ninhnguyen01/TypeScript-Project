@@ -1,0 +1,747 @@
+() Static type-checking ()
+
+- Static type systems describe the shapes and behaviors of what our values will be when we run our programs. A type-checker like TypeScript uses that information and tells us when things might be going off the rails.
+
+() Types for Tooling ()
+
+- The type-checker has information to check things like whether we’re accessing the right properties on variables and other properties. Once it has that information, it can also start suggesting which properties you might want to use.
+
+- That means TypeScript can be leveraged for editing code too, and the core type-checker can provide error messages and code completion as you type in the editor. That’s part of what people often refer to when they talk about tooling in TypeScript.
+
+() "tsc", the TypeScript compiler ()
+
+- npm install -g typescript (if error on mac, do sudo before)
+- tsc fileName.ts
+- tsc compiles or transforms it into a plain JavaScript file. And if we check the contents, we’ll see what TypeScript spits out after it processes a .ts file:
+
+() Emitting with Errors ()
+
+- you can use the noEmitOnError compiler option.
+- examplge: tsc --noEmitOnError yourFileName.ts
+
+() Explicit Types ()
+
+- Keep in mind, we don’t always have to write explicit type annotations. In many cases, TypeScript can even just infer (or “figure out”) the types for us even if we omit them.
+
+() Downleveling ()
+
+- By default TypeScript targets ES5, an extremely old version of ECMAScript. We could have chosen something a little bit more recent by using the target option. Running with --target es2015 changes TypeScript to target ECMAScript 2015, meaning code should be able to run wherever ECMAScript 2015 is supported. So running tsc --target es2015 hello.ts.
+
+() Strictness ()
+
+- The strict flag in the CLI, or "strict": true in a tsconfig.json toggles them all on simultaneously, but we can opt out of them individually. The two biggest ones you should know about are noImplicitAny and strictNullChecks.
+
+() noImplicitAny ()
+
+- Recall that in some places, TypeScript doesn’t try to infer types for us and instead falls back to the most lenient type: any. This isn’t the worst thing that can happen - after all, falling back to any is just the plain JavaScript experience anyway.
+
+- However, using any often defeats the purpose of using TypeScript in the first place. The more typed your program is, the more validation and tooling you’ll get, meaning you’ll run into fewer bugs as you code. Turning on the noImplicitAny flag will issue an error on any variables whose type is implicitly inferred as any.
+
+() strictNullChecks ()
+
+- By default, values like null and undefined are assignable to any other type. This can make writing some code easier, but forgetting to handle null and undefined is the cause of countless bugs in the world - some consider it a billion dollar mistake! The strictNullChecks flag makes handling null and undefined more explicit, and spares us from worrying about whether we forgot to handle null and undefined.
+
+() The primitives: string, number, and boolean ()
+
+- 3 very commonly used primitives: string, number, and boolean.
+- string represents string values like "Hello, world"
+- number is for numbers like 42. JavaScript does not have a special runtime value for integers, so there’s no equivalent to int or
+- float - everything is simply number
+- boolean is for the two values true and false
+
+() Arrays ()
+
+- To specify the type of an array like [1, 2, 3], you can use the syntax number[]; this syntax works for any type (e.g. string[] is an array of strings, and so on). You may also see this written as Array<number>, which means the same thing. We’ll learn more about the syntax T<U> when we cover generics.
+
+() any ()
+
+- TypeScript also has a special type, any, that you can use whenever you don’t want a particular value to cause typechecking errors.
+
+() noImplicitAny ()
+
+- When you don’t specify a type, and TypeScript can’t infer it from context, the compiler will typically default to any. You usually want to avoid this, though, because any isn’t type-checked. Use the compiler flag noImplicitAny to flag any implicit any as an error.
+
+() Type Annotations on Variables ()
+
+- When you declare a variable using const, var, or let, you can optionally add a type annotation to explicitly specify the type of the variable:
+- example: let myName: string = "Alice";
+
+() Functions ()
+
+- Functions are the primary means of passing data around in JavaScript. TypeScript allows you to specify the types of both the input and output values of functions.
+
+() Parameter Type Annotations ()
+  When you declare a function, you can add type annotations after each parameter to declare what types of parameters the function accepts. Parameter type annotations go after the parameter name:
+  // Parameter type annotation
+  function greet(name: string) {
+  console.log("Hello, " + name.toUpperCase() + "!!");
+  }
+
+() Return Type Annotations ()
+  You can also add return type annotations. Return type annotations appear after the parameter list:
+  function getFavoriteNumber(): number {
+  return 26;
+  }
+
+() Functions Which Return Promises ()
+  If you want to annotate the return type of a function which returns a promise, you should use the Promise type:
+  async function getFavoriteNumber(): Promise<number> {
+  return 26;
+  }
+
+() Anonymous Functions ()
+  Anonymous functions are a little bit different from function declarations. When a function appears in a place where TypeScript can determine how it’s going to be called, the parameters of that function are automatically given types.
+  const names = ["Alice", "Bob", "Eve"];
+
+// Contextual typing for function - parameter s inferred to have type string
+names.forEach(function (s) {
+console.log(s.toUpperCase());
+});
+
+// Contextual typing also applies to arrow functions
+names.forEach((s) => {
+console.log(s.toUpperCase());
+});
+
+- Even though the parameter s didn’t have a type annotation, TypeScript used the types of the forEach function, along with the inferred type of the array, to determine the type s will have.
+- This process is called contextual typing because the context that the function occurred within informs what type it should have.
+
+() Object Types ()
+
+- Apart from primitives, the most common sort of type you’ll encounter is an object type. This refers to any JavaScript value with properties, which is almost all of them! To define an object type, we simply list its properties and their types.
+
+- For example, here’s a function that takes a point-like object:
+  // The parameter's type annotation is an object type
+
+function printCoord(pt: { x: number; y: number }) {
+console.log("The coordinate's x value is " + pt.x);
+console.log("The coordinate's y value is " + pt.y);
+}
+printCoord({ x: 3, y: 7 });
+
+() Optional Properties ()
+
+- Object types can also specify that some or all of their properties are optional. To do this, add a ? after the property name:
+
+function printName(obj: { first: string; last?: string }) {
+// ...
+}
+// Both OK
+printName({ first: "Bob" });
+printName({ first: "Alice", last: "Alisson" });
+
+- In JavaScript, if you access a property that doesn’t exist, you’ll get the value undefined rather than a runtime error. Because of this, when you read from an optional property, you’ll have to check for undefined before using it.
+
+function printName(obj: { first: string; last?: string }) {
+// Error - might crash if 'obj.last' wasn't provided!
+console.log(obj.last.toUpperCase());
+'obj.last' is possibly 'undefined'.
+
+if (obj.last !== undefined) {
+// OK
+console.log(obj.last.toUpperCase());
+}
+
+// A safe alternative using modern JavaScript syntax:
+console.log(obj.last?.toUpperCase());
+}
+
+() Union Types ()
+
+- TypeScript’s type system allows you to build new types out of existing ones using a large variety of operators. Now that we know how to write a few types, it’s time to start combining them in interesting ways.
+
+- Defining a Union Type
+  The first way to combine types you might see is a union type. A union type is a type formed from two or more other types, representing values that may be any one of those types. We refer to each of these types as the union’s members.
+  Let’s write a function that can operate on strings or numbers:
+
+function printId(id: number | string) {
+console.log("Your ID is: " + id);
+}
+// OK
+printId(101);
+// OK
+printId("202");
+
+function printTextOrNumberOrBool(
+textOrNumberOrBool:
+| string
+| number
+| boolean
+) {
+console.log(textOrNumberOrBool);
+}
+
+- Working with Union Types
+- It’s easy to provide a value matching a union type - simply provide a type matching any of the union’s members. If you have a value of a union type, how do you work with it?
+
+- TypeScript will only allow an operation if it is valid for every member of the union. For example, if you have the union string | number, you can’t use methods that are only available on string:
+
+- The solution is to narrow the union with code, the same as you would in JavaScript without type annotations. Narrowing occurs when TypeScript can deduce a more specific type for a value based on the structure of the code.
+
+- For example, TypeScript knows that only a string value will have a typeof value "string":
+
+function printId(id: number | string) {
+if (typeof id === "string") {
+// In this branch, id is of type 'string'
+console.log(id.toUpperCase());
+} else {
+// Here, id is of type 'number'
+console.log(id);
+}
+}
+
+- Another example is to use a function like Array.isArray:
+
+function welcomePeople(x: string[] | string) {
+if (Array.isArray(x)) {
+// Here: 'x' is 'string[]'
+console.log("Hello, " + x.join(" and "));
+} else {
+// Here: 'x' is 'string'
+console.log("Welcome lone traveler " + x);
+}
+}
+
+- Sometimes you’ll have a union where all the members have something in common. For example, both arrays and strings have a slice method. If every member in a union has a property in common, you can use that property without narrowing:
+
+// Return type is inferred as number[] | string
+function getFirstThree(x: number[] | string) {
+return x.slice(0, 3);
+}
+
+() Type Aliases ()
+
+- We’ve been using object types and union types by writing them directly in type annotations. This is convenient, but it’s common to want to use the same type more than once and refer to it by a single name.
+
+- A type alias is exactly that - a name for any type. The syntax for a type alias is:
+
+  type Point = {
+  x: number;
+  y: number;
+  };
+
+// Exactly the same as the earlier example
+function printCoord(pt: Point) {
+console.log("The coordinate's x value is " + pt.x);
+console.log("The coordinate's y value is " + pt.y);
+}
+
+printCoord({ x: 100, y: 100 });
+
+- Note that aliases are only aliases - you cannot use type aliases to create different/distinct “versions” of the same type. When you use the alias, it’s exactly as if you had written the aliased type. In other words, this code might look illegal, but is OK according to TypeScript because both types are aliases for the same type:
+
+type UserInputSanitizedString = string;
+
+function sanitizeInput(str: string): UserInputSanitizedString {
+return sanitize(str);
+}
+
+// Create a sanitized input
+let userInput = sanitizeInput(getInput());
+
+// Can still be re-assigned with a string though
+userInput = "new input";
+
+() Interfaces ()
+
+- An interface declaration is another way to name an object type:
+
+interface Point {
+x: number;
+y: number;
+}
+
+function printCoord(pt: Point) {
+console.log("The coordinate's x value is " + pt.x);
+console.log("The coordinate's y value is " + pt.y);
+}
+
+printCoord({ x: 100, y: 100 });
+
+() Type Assertions ()
+
+- Sometimes you will have information about the type of a value that TypeScript can’t know about.
+- For example, if you’re using document.getElementById, TypeScript only knows that this will return some kind of HTMLElement, but you might know that your page will always have an HTMLCanvasElement with a given ID.
+- In this situation, you can use a type assertion to specify a more specific type:
+
+() const myCanvas = document.getElementById("main_canvas") as HTMLCanvasElement; ()
+
+- Like a type annotation, type assertions are removed by the compiler and won’t affect the runtime behavior of your code.
+- You can also use the angle-bracket syntax (except if the code is in a .tsx file), which is equivalent:
+
+const myCanvas = <HTMLCanvasElement>document.getElementById("main_canvas");
+
+() Literal Types ()
+
+- In addition to the general types string and number, we can refer to specific strings and numbers in type positions.
+- One way to think about this is to consider how JavaScript comes with different ways to declare a variable. Both var and let allow for changing what is held inside the variable, and const does not. This is reflected in how TypeScript creates types for literals.
+
+let changingString = "Hello World";
+changingString = "Olá Mundo";
+// Because `changingString` can represent any possible string, that
+// is how TypeScript describes it in the type system
+changingString;
+
+const constantString = "Hello World";
+// Because `constantString` can only represent 1 possible string, it
+// has a literal type representation
+constantString;
+
+() strictNullChecks: off ()
+
+- With strictNullChecks off, values that might be null or undefined can still be accessed normally, and the values null and undefined can be assigned to a property of any type. This is similar to how languages without null checks (e.g. C#, Java) behave. The lack of checking for these values tends to be a major source of bugs; we always recommend people turn strictNullChecks on if it’s practical to do so in their codebase.
+
+() strictNullChecks: on ()
+
+- With strictNullChecks on, when a value is null or undefined, you will need to test for those values before using methods or properties on that value. Just like checking for undefined before using an optional property, we can use narrowing to check for values that might be null:
+
+function doSomething(x: string | null) {
+if (x === null) {
+// do nothing
+} else {
+console.log("Hello, " + x.toUpperCase());
+}
+}
+
+() Non-null Assertion Operator (Postfix !) ()
+
+- TypeScript also has a special syntax for removing null and undefined from a type without doing any explicit checking. Writing ! after any expression is effectively a type assertion that the value isn’t null or undefined:
+
+function liveDangerously(x?: number | null) {
+// No error
+console.log(x!.toFixed());
+}
+
+- Just like other type assertions, this doesn’t change the runtime behavior of your code, so it’s important to only use ! when you know that the value can’t be null or undefined.
+
+() Enums ()
+
+- Enums are a feature added to JavaScript by TypeScript which allows for describing a value which could be one of a set of possible named constants. Unlike most TypeScript features, this is not a type-level addition to JavaScript but something added to the language and runtime. Because of this, it’s a feature which you should know exists, but maybe hold off on using unless you are sure.
+
+() Narrowing ()
+
+- Within our if check, TypeScript sees typeof padding === "number" and understands that as a special form of code called a type guard. TypeScript follows possible paths of execution that our programs can take to analyze the most specific possible type of a value at a given position. It looks at these special checks (called type guards) and assignments, and the process of refining types to more specific types than declared is called narrowing.
+
+function padLeft(padding: number | string, input: string): string {
+if (typeof padding === "number") {
+return " ".repeat(padding) + input;
+
+(parameter) padding: number
+}
+return padding + input;
+
+(parameter) padding: string
+}
+
+() typeof type guards ()
+
+- TypeScript expects this to return a certain set of strings:
+
+"string"
+"number"
+"bigint"
+"boolean"
+"symbol"
+"undefined"
+"object"
+"function"
+
+() Truthiness narrowing ()
+
+function getUsersOnlineMessage(numUsersOnline: number) {
+if (numUsersOnline) {
+return `There are ${numUsersOnline} online now!`;
+}
+return "Nobody's here. :(";
+}
+
+- guarding against values like null or undefined. As an example, let’s try using it for our printAll function.
+
+function printAll(strs: string | string[] | null) {
+if (strs && typeof strs === "object") {
+for (const s of strs) {
+console.log(s);
+}
+} else if (typeof strs === "string") {
+console.log(strs);
+}
+}
+
+() Equality narrowing ()
+
+- TypeScript also uses switch statements and equality checks like ===, !==, ==, and != to narrow types. For example:
+
+function example(x: string | number, y: string | boolean) {
+if (x === y) {
+// We can now call any 'string' method on 'x' or 'y'.
+x.toUpperCase();
+
+(method) String.toUpperCase(): string
+y.toLowerCase();
+
+(method) String.toLowerCase(): string
+} else {
+console.log(x);
+
+(parameter) x: string | number
+console.log(y);
+
+(parameter) y: string | boolean
+}
+}
+
+() The in operator narrowing ()
+
+- JavaScript has an operator for determining if an object or its prototype chain has a property with a name: the in operator. TypeScript takes this into account as a way to narrow down potential types.
+
+For example, with the code: "value" in x. where "value" is a string literal and x is a union type. The “true” branch narrows x’s types which have either an optional or required property value, and the “false” branch narrows to types which have an optional or missing property value.
+
+type Fish = { swim: () => void };
+type Bird = { fly: () => void };
+
+function move(animal: Fish | Bird) {
+if ("swim" in animal) {
+return animal.swim();
+}
+
+return animal.fly();
+}
+
+() instance of narrowing ()
+
+- instanceof is also a type guard, and TypeScript narrows in branches guarded by instanceofs.
+
+function logValue(x: Date | string) {
+if (x instanceof Date) {
+console.log(x.toUTCString());
+
+(parameter) x: Date
+} else {
+console.log(x.toUpperCase());
+
+(parameter) x: string
+}
+}
+
+() Using type predicates ()
+
+- To define a user-defined type guard, we simply need to define a function whose return type is a type predicate:
+
+function isFish(pet: Fish | Bird): pet is Fish {
+return (pet as Fish).swim !== undefined;
+}
+
+// Both calls to 'swim' and 'fly' are now okay.
+let pet = getSmallPet();
+
+if (isFish(pet)) {
+pet.swim();
+} else {
+pet.fly();
+}
+
+- You may use the type guard isFish to filter an array of Fish | Bird and obtain an array of Fish:
+
+const zoo: (Fish | Bird)[] = [getSmallPet(), getSmallPet(), getSmallPet()];
+const underWater1: Fish[] = zoo.filter(isFish);
+// or, equivalently
+const underWater2: Fish[] = zoo.filter(isFish) as Fish[];
+
+// The predicate may need repeating for more complex examples
+const underWater3: Fish[] = zoo.filter((pet): pet is Fish => {
+if (pet.name === "sharkey") return false;
+return isFish(pet);
+});
+
+() Discriminated unions ()
+
+interface Circle {
+kind: "circle";
+radius: number;
+}
+
+interface Square {
+kind: "square";
+sideLength: number;
+}
+
+type Shape = Circle | Square;
+
+function getArea(shape: Shape) {
+if (shape.kind === "circle") {
+return Math.PI \* shape.radius \*\* 2;
+
+(parameter) shape: Circle
+}
+}
+
+- The same checking works with switch statements as well. Now we can try to write our complete getArea without any pesky ! non-null assertions.
+
+function getArea(shape: Shape) {
+switch (shape.kind) {
+case "circle":
+return Math.PI \* shape.radius \*\* 2;
+
+(parameter) shape: Circle
+case "square":
+return shape.sideLength \*\* 2;
+
+(parameter) shape: Square
+}
+}
+
+- Discriminated unions are useful for more than just talking about circles and squares. They’re good for representing any sort of messaging scheme in JavaScript, like when sending messages over the network (client/server communication), or encoding mutations in a state management framework.
+
+() More on Functions ()
+
+- Functions are the basic building block of any application, whether they’re local functions, imported from another module, or methods on a class. They’re also values, and just like other values, TypeScript has many ways to describe how functions can be called.
+
+() Function Type Expressions ()
+
+- syntactically similar to arrow functions:
+
+function greeter(fn: (a: string) => void) {
+fn("Hello, World");
+}
+
+function printToConsole(s: string) {
+console.log(s);
+}
+
+greeter(printToConsole);
+
+- type alias to name a function type:
+
+type GreetFunction = (a: string) => void;
+function greeter(fn: GreetFunction) {
+// ...
+}
+
+() Call Signatures ()
+
+- If we want to describe something callable with properties, we can write a call signature in an object type:
+
+type DescribableFunction = {
+description: string;
+(someArg: number): boolean;
+};
+function doSomething(fn: DescribableFunction) {
+console.log(fn.description + " returned " + fn(6));
+}
+
+function myFunc(someArg: number) {
+return someArg > 3;
+}
+myFunc.description = "default description";
+
+doSomething(myFunc);
+
+() Construct Signatures ()
+
+- You can write a construct signature by adding the new keyword in front of a call signature:
+
+type SomeConstructor = {
+  new (s: string): SomeObject;
+};
+function fn(ctor: SomeConstructor) {
+  return new ctor("hello");
+}
+
+() Generic Functions ()
+
+- It’s common to write a function where the types of the input relate to the type of the output, or where the types of two inputs are related in some way. 
+
+- In TypeScript, generics are used when we want to describe a correspondence between two values. We do this by declaring a type parameter in the function signature:
+
+function firstElement<Type>(arr: Type[]): Type | undefined {
+  return arr[0];
+}
+
+// s is of type 'string'
+const s = firstElement(["a", "b", "c"]);
+// n is of type 'number'
+const n = firstElement([1, 2, 3]);
+// u is of type undefined
+const u = firstElement([]);
+
+() Declaring this in a Function ()
+
+- TypeScript will infer what the this should be in a function via code flow analysis, for example in the following:
+
+const user = {
+  id: 123,
+ 
+  admin: false,
+  becomeAdmin: function () {
+    this.admin = true;
+  },
+};
+
+interface DB {
+  filterUsers(filter: (this: User) => boolean): User[];
+}
+ 
+const db = getDB();
+const admins = db.filterUsers(function (this: User) {
+  return this.admin;
+});
+
+() Object Types ()
+
+function greet(person: { name: string; age: number }) {
+  return "Hello " + person.name;
+}
+
+- or they can be named by using either an interface:
+
+interface Person {
+  name: string;
+  age: number;
+}
+ 
+function greet(person: Person) {
+  return "Hello " + person.name;
+}
+
+- or a type alias:
+
+type Person = {
+  name: string;
+  age: number;
+};
+ 
+function greet(person: Person) {
+  return "Hello " + person.name;
+}
+
+() Creating Types from Types ()
+
+- TypeScript’s type system is very powerful because it allows expressing types in terms of other types.
+- The simplest form of this idea is generics. Additionally, we have a wide variety of type operators available to use. It’s also possible to express types in terms of values that we already have.
+- By combining various type operators, we can express complex operations and values in a succinct, maintainable way. In this section we’ll cover ways to express a new type in terms of an existing type or value.
+
+- Generics - Types which take parameters
+- Keyof Type Operator - Using the keyof operator to create new types
+- Typeof Type Operator - Using the typeof operator to create new types
+- Indexed Access Types - Using Type['a'] syntax to access a subset of a type
+- Conditional Types - Types which act like if statements in the type system
+- Mapped Types - Creating types by mapping each property in an existing type
+- Template Literal Types - Mapped types which change properties via template literal strings
+
+() Generics ()
+
+- creating reusable components is generics, that is, being able to create a component that can work over a variety of types rather than a single one. This allows users to consume these components and use their own types.
+
+() Hello World of Generics ()
+
+function identity(arg: number): number {
+  return arg;
+}
+
+- Or, we could describe the identity function using the any type:
+
+function identity(arg: any): any {
+  return arg;
+}
+
+- Here, we will use a type variable, a special kind of variable that works on types rather than values.
+
+function identity<Type>(arg: Type): Type {
+  return arg;
+}
+
+() Working with Generic Type Variables ()
+
+function loggingIdentity<Type>(arg: Type[]): Type[] {
+  console.log(arg.length);
+  return arg;
+}
+
+function loggingIdentity<Type>(arg: Array<Type>): Array<Type> {
+  console.log(arg.length); // Array has a .length, so no more error
+  return arg;
+}
+
+() Generic Types ()
+
+- Hello World of Generics
+
+- Here, we will use a type variable, a special kind of variable that works on types rather than values.
+
+function identity<Type>(arg: Type): Type {
+  return arg;
+}
+
+- Once we’ve written the generic identity function, we can call it in one of two ways. The first way is to pass all of the arguments, including the type argument, to the function:
+
+let output = identity<string>("myString");
+
+- Working with Generic Type Variables
+
+function loggingIdentity<Type>(arg: Type[]): Type[] {
+  console.log(arg.length);
+  return arg;
+}
+
+- We can alternatively write the sample example this way:
+
+function loggingIdentity<Type>(arg: Array<Type>): Array<Type> {
+  console.log(arg.length); // Array has a .length, so no more error
+  return arg;
+}
+
+() Classes ()
+
+- Fields 
+- A field declaration creates a public writeable property on a class:
+
+class Point {
+  x: number;
+  y: number;
+}
+ 
+const pt = new Point();
+pt.x = 0;
+pt.y = 0;
+
+- Fields can also have initializers; these will run automatically when the class is instantiated:
+
+class Point {
+  x = 0;
+  y = 0;
+}
+ 
+const pt = new Point();
+// Prints 0, 0
+console.log(`${pt.x}, ${pt.y}`);
+
+- Constructors
+- Class constructors are very similar to functions. You can add parameters with type annotations, default values, and overloads:
+
+class Point {
+  x: number;
+  y: number;
+ 
+  // Normal signature with defaults
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+() Iterators and Generators ()
+
+for..of vs. for..in statements
+
+- Both for..of and for..in statements iterate over lists; the values iterated on are different though, 
+for..in returns a list of keys on the object being iterated, whereas for..of returns a list of values of the numeric properties of the object being iterated.
+
+Here is an example that demonstrates this distinction:
+
+let list = [4, 5, 6];
+for (let i in list) {
+  console.log(i); // "0", "1", "2",
+}
+for (let i of list) {
+  console.log(i); // 4, 5, 6
+}
