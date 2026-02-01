@@ -1,0 +1,23 @@
+## command line ##
+
+# Globally Installing TypeScript
+
+npm install -g typescript 
+
+# TypeScript in Your Project
+
+npm install typescript --save-dev
+
+npx tsc
+
+# Compiling your code
+
+tsc yourfileName.ts
+
+# Command Line Flags
+
+tsc -watch, -w Watch input files
+
+tsc --init Initializes a TypeScript project and creates a tsconfig.json file
+
+tsc --version Print the compiler's version.
