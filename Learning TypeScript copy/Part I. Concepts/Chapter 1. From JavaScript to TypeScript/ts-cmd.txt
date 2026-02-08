@@ -1,0 +1,4 @@
+npm i -g typescript (on mac - use 'sudo' before npm to have admin privilege if u run into error)
+tsc --version
+tsc --init
+tsc index.ts
