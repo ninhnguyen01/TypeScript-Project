@@ -1,0 +1,1 @@
+const philosopher = "Hypatia";
